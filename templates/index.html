@@ -1,0 +1,39 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>DataReport Web</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+
+<div class="contenedor">
+    <h1>DataReport Web</h1>
+    <p>Sistema web para analizar archivos Excel, CSV y datos desde MySQL.</p>
+
+    <section class="card">
+        <h2>Subir archivo Excel o CSV</h2>
+
+        <form action="/subir" method="POST" enctype="multipart/form-data">
+            <input type="file" name="archivo" accept=".xlsx,.xls,.csv" required>
+            <button type="submit">Analizar archivo</button>
+        </form>
+    </section>
+
+    <section class="card">
+        <h2>Conectar a MySQL</h2>
+
+        <form action="/mysql" method="POST">
+            <input type="text" name="host" placeholder="Host: localhost" required>
+            <input type="text" name="puerto" placeholder="Puerto: 3306" value="3306" required>
+            <input type="text" name="usuario" placeholder="Usuario MySQL" required>
+            <input type="password" name="password" placeholder="ContraseÃ±a MySQL">
+            <input type="text" name="base_datos" placeholder="Base de datos" required>
+            <input type="text" name="tabla" placeholder="Tabla" required>
+            <button type="submit">Analizar datos MySQL</button>
+        </form>
+    </section>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,51 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Reporte de Analisis</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+
+<div class="contenedor">
+    <h1>Reporte de Analisis</h1>
+
+    <section class="card">
+        <h2>Resumen general</h2>
+        <p><strong>Filas:</strong> {{ resumen.filas }}</p>
+        <p><strong>Columnas:</strong> {{ resumen.columnas }}</p>
+        <p><strong>Datos vacios:</strong> {{ resumen.nulos }}</p>
+        <p><strong>Filas duplicadas:</strong> {{ resumen.duplicados }}</p>
+
+        <h3>Columnas detectadas</h3>
+        <ul>
+            {% for columna in resumen.columnas_lista %}
+                <li>{{ columna }}</li>
+            {% endfor %}
+        </ul>
+    </section>
+
+    {% if grafico %}
+    <section class="card">
+        <h2>Grafico automatico</h2>
+        <img src="{{ grafico }}" class="grafico">
+    </section>
+    {% endif %}
+
+    <section class="card">
+        <h2>Vista previa de datos</h2>
+        {{ vista_previa | safe }}
+    </section>
+
+    {% if estadisticas %}
+    <section class="card">
+        <h2>Estadisticas numericas</h2>
+        {{ estadisticas | safe }}
+    </section>
+    {% endif %}
+
+    <a href="/" class="boton-volver">Volver</a>
+</div>
+
+</body>
+</html>
