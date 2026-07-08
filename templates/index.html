@@ -7,32 +7,115 @@
 </head>
 <body>
 
-<div class="contenedor">
-    <h1>DataReport Web</h1>
-    <p>Sistema web para analizar archivos Excel, CSV y datos desde MySQL.</p>
+<div class="layout">
 
-    <section class="card">
-        <h2>Subir archivo Excel o CSV</h2>
+    <aside class="sidebar">
+        <div class="logo">
+            <div class="logo-icon">D</div>
+            <div>
+                <h2>DataReport</h2>
+                <p>Web Analytics</p>
+            </div>
+        </div>
 
-        <form action="/subir" method="POST" enctype="multipart/form-data">
-            <input type="file" name="archivo" accept=".xlsx,.xls,.csv" required>
-            <button type="submit">Analizar archivo</button>
-        </form>
-    </section>
+        <nav>
+            <a href="/" class="active">Inicio</a>
+            <a href="#">Subir datos</a>
+            <a href="#">MySQL</a>
+            <a href="#">Reportes</a>
+        </nav>
+    </aside>
 
-    <section class="card">
-        <h2>Conectar a MySQL</h2>
+    <main class="main">
 
-        <form action="/mysql" method="POST">
-            <input type="text" name="host" placeholder="Host: localhost" required>
-            <input type="text" name="puerto" placeholder="Puerto: 3306" value="3306" required>
-            <input type="text" name="usuario" placeholder="Usuario MySQL" required>
-            <input type="password" name="password" placeholder="ContraseÃ±a MySQL">
-            <input type="text" name="base_datos" placeholder="Base de datos" required>
-            <input type="text" name="tabla" placeholder="Tabla" required>
-            <button type="submit">Analizar datos MySQL</button>
-        </form>
-    </section>
+        <section class="hero">
+            <div>
+                <span class="badge">Sistema de análisis de datos</span>
+                <h1>Analiza tus datos de forma rápida y visual</h1>
+                <p>
+                    Sube archivos Excel o CSV, conecta datos desde MySQL y genera reportes
+                    con estadísticas, tablas y gráficos automáticos.
+                </p>
+            </div>
+        </section>
+
+        <section class="cards-grid">
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="icon">📊</div>
+                    <div>
+                        <h2>Subir archivo</h2>
+                        <p>Excel o CSV</p>
+                    </div>
+                </div>
+
+                <form action="/subir" method="POST" enctype="multipart/form-data">
+                    <label>Selecciona tu archivo</label>
+                    <input type="file" name="archivo" accept=".xlsx,.xls,.csv" required>
+
+                    <button type="submit">Analizar archivo</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="icon">🗄️</div>
+                    <div>
+                        <h2>Conectar MySQL</h2>
+                        <p>Base de datos externa</p>
+                    </div>
+                </div>
+
+                <form action="/mysql" method="POST">
+                    <div class="form-grid">
+                        <div>
+                            <label>Host</label>
+                            <input type="text" name="host" placeholder="localhost" required>
+                        </div>
+
+                        <div>
+                            <label>Puerto</label>
+                            <input type="text" name="puerto" placeholder="3306" value="3306" required>
+                        </div>
+                    </div>
+
+                    <label>Usuario</label>
+                    <input type="text" name="usuario" placeholder="Usuario MySQL" required>
+
+                    <label>Contraseña</label>
+                    <input type="password" name="password" placeholder="Contraseña MySQL">
+
+                    <label>Base de datos</label>
+                    <input type="text" name="base_datos" placeholder="Nombre de la base de datos" required>
+
+                    <label>Tabla</label>
+                    <input type="text" name="tabla" placeholder="Nombre de la tabla" required>
+
+                    <button type="submit">Analizar datos MySQL</button>
+                </form>
+            </div>
+
+        </section>
+
+        <section class="info-grid">
+            <div class="info-card">
+                <h3>Archivos compatibles</h3>
+                <p>.xlsx, .xls y .csv</p>
+            </div>
+
+            <div class="info-card">
+                <h3>Análisis automático</h3>
+                <p>Filas, columnas, nulos, duplicados y estadísticas.</p>
+            </div>
+
+            <div class="info-card">
+                <h3>Reportes visuales</h3>
+                <p>Tablas, resumen general y gráficos generados automáticamente.</p>
+            </div>
+        </section>
+
+    </main>
 </div>
 
 </body>
