@@ -6,3 +6,6 @@ uploads/
 static/grafico.png
 static/reportes/
 .vscode/
+actualizar_metricas.ps1
+corregir_sistema.ps1
+limpiar_textos.ps1
