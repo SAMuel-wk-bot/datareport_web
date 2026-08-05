@@ -2,7 +2,8 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Reporte de Análisis</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Reporte dinámico</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
 <body>
@@ -11,84 +12,141 @@
 
     <aside class="sidebar">
         <div class="logo">
-            <div class="logo-icon">D</div>
-            <div>
-                <h2>DataReport</h2>
-                <p>Web Analytics</p>
-            </div>
+            <img class="brand-logo" src="{{ url_for('static', filename='img/datareport-logo.png') }}" alt="DataReport Web Analytics">
         </div>
 
         <nav>
             <a href="/">Inicio</a>
-            <a href="#" class="active">Reporte</a>
-            <a href="#">Gráficos</a>
-            <a href="#">Historial</a>
+            <a href="/analisis">Configurar</a>
+            <a href="#reporte" class="active" aria-current="page">Reporte</a>
+            <a href="#vista-previa">Vista previa</a>
         </nav>
     </aside>
 
     <main class="main">
 
-        <section class="hero small">
-            <div>
-                <span class="badge">Reporte generado</span>
-                <h1>Resultados del análisis</h1>
-                <p>
-                    Aquí puedes visualizar el resumen general, columnas detectadas,
-                    vista previa de datos, estadísticas y gráficos automáticos.
-                </p>
-            </div>
+        <section class="hero small" id="reporte">
+            <span class="badge">Reporte generado</span>
+            <h1>Reporte dinámico de análisis</h1>
+            <p>
+                Fuente analizada: <strong>{{ nombre }}</strong>.
+                Cálculo aplicado: <strong>{{ tipo_calculo }}</strong>.
+            </p>
         </section>
 
         <section class="stats-grid">
             <div class="stat-card">
-                <span>Filas</span>
-                <h2>{{ resumen.filas }}</h2>
+                <span>Registros analizados</span>
+                <h2>{{ metricas.registros }}</h2>
             </div>
 
             <div class="stat-card">
-                <span>Columnas</span>
-                <h2>{{ resumen.columnas }}</h2>
+                <span>Total</span>
+                <h2>{{ metricas.total }}</h2>
             </div>
 
             <div class="stat-card">
-                <span>Datos vacíos</span>
-                <h2>{{ resumen.nulos }}</h2>
+                <span>Promedio</span>
+                <h2>{{ metricas.promedio }}</h2>
             </div>
 
             <div class="stat-card">
-                <span>Duplicados</span>
-                <h2>{{ resumen.duplicados }}</h2>
+                <span>Máximo</span>
+                <h2>{{ metricas.maximo }}</h2>
             </div>
         </section>
 
-        <section class="card">
-            <div class="section-title">
-                <h2>Columnas detectadas</h2>
-                <p>Listado de campos encontrados en el archivo o tabla analizada.</p>
+        <section class="stats-grid two">
+            <div class="stat-card">
+                <span>Mínimo</span>
+                <h2>{{ metricas.minimo }}</h2>
             </div>
 
-            <div class="chips">
-                {% for columna in resumen.columnas_lista %}
-                    <span>{{ columna }}</span>
-                {% endfor %}
+            <div class="stat-card">
+                <span>Datos válidos</span>
+                <h2>{{ metricas.datos_validos }}</h2>
+            </div>
+
+            <div class="stat-card">
+                <span>Datos inválidos</span>
+                <h2>{{ metricas.datos_invalidos }}</h2>
+            </div>
+
+            <div class="stat-card">
+                <span>Variable analizada</span>
+                <h2 class="small-number">{{ valor_col }}</h2>
             </div>
         </section>
 
-        {% if grafico %}
-        <section class="card">
-            <div class="section-title">
-                <h2>Gráfico automático</h2>
-                <p>Visualización generada con la primera columna numérica encontrada.</p>
+        <section class="info-grid">
+            <div class="info-card">
+                <h3>Columna de fecha</h3>
+                <p>{{ fecha_col if fecha_col else "No seleccionada" }}</p>
             </div>
 
-            <img src="/{{ grafico }}" class="grafico" alt="Gráfico generado">
+            <div class="info-card">
+                <h3>Columna de categoría</h3>
+                <p>{{ categoria_col if categoria_col else "No seleccionada" }}</p>
+            </div>
+
+            <div class="info-card">
+                <h3>Tipo de reporte</h3>
+                <p>Mensual, categórico y numérico.</p>
+            </div>
+        </section>
+
+        {% if grafico_mensual %}
+        <section class="card">
+            <div class="section-title">
+                <h2>Gráfico mensual</h2>
+                <p>Evolución de la métrica seleccionada por mes.</p>
+            </div>
+
+            <img src="{{ url_for('static', filename=grafico_mensual) }}" class="grafico" alt="Gráfico mensual">
         </section>
         {% endif %}
 
+        {% if tabla_mensual %}
         <section class="card">
             <div class="section-title">
+                <h2>Reporte mensual</h2>
+                <p>Resultado agrupado por mes.</p>
+            </div>
+
+            <div class="tabla-contenedor">
+                {{ tabla_mensual | safe }}
+            </div>
+        </section>
+        {% endif %}
+
+        {% if grafico_categoria %}
+        <section class="card">
+            <div class="section-title">
+                <h2>Ranking por categoría</h2>
+                <p>Principales categorías según la métrica seleccionada.</p>
+            </div>
+
+            <img src="{{ url_for('static', filename=grafico_categoria) }}" class="grafico" alt="Gráfico por categoría">
+        </section>
+        {% endif %}
+
+        {% if tabla_categoria %}
+        <section class="card">
+            <div class="section-title">
+                <h2>Tabla por categoría</h2>
+                <p>Resultado ordenado de mayor a menor.</p>
+            </div>
+
+            <div class="tabla-contenedor">
+                {{ tabla_categoria | safe }}
+            </div>
+        </section>
+        {% endif %}
+
+        <section class="card" id="vista-previa">
+            <div class="section-title">
                 <h2>Vista previa de datos</h2>
-                <p>Primeros registros encontrados en la fuente de datos.</p>
+                <p>Primeros registros de la fuente analizada.</p>
             </div>
 
             <div class="tabla-contenedor">
@@ -96,20 +154,8 @@
             </div>
         </section>
 
-        {% if estadisticas %}
-        <section class="card">
-            <div class="section-title">
-                <h2>Estadísticas numéricas</h2>
-                <p>Resumen estadístico de las columnas numéricas.</p>
-            </div>
-
-            <div class="tabla-contenedor">
-                {{ estadisticas | safe }}
-            </div>
-        </section>
-        {% endif %}
-
-        <a href="/" class="boton-volver">Volver al inicio</a>
+        <a href="/analisis" class="boton-volver">Modificar parámetros</a>
+        <a href="/" class="boton-secundario">Cargar otra fuente</a>
 
     </main>
 </div>

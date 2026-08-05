@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ titulo }} | DataReport</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body class="error-body">
+    <main class="error-shell">
+        <section class="error-panel">
+            <a href="{{ url_for('index') }}" class="error-brand">
+                <img src="{{ url_for('static', filename='img/datareport-logo.png') }}" alt="DataReport Web Analytics">
+            </a>
+
+            <div class="error-visual" aria-hidden="true">
+                <span class="error-code">{{ estado }}</span>
+                <div class="error-icon">!</div>
+            </div>
+
+            <span class="eyebrow">Necesitamos tu atención</span>
+            <h1>{{ titulo }}</h1>
+            <p class="error-message">{{ mensaje }}</p>
+
+            {% if sugerencias %}
+            <div class="error-help">
+                <h2>¿Qué puedes hacer?</h2>
+                <ul>
+                    {% for sugerencia in sugerencias %}<li>{{ sugerencia }}</li>{% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <div class="error-actions">
+                <button type="button" class="boton-secundario" onclick="history.back()">Volver atrás</button>
+                <a href="{{ url_for('index') }}" class="boton-volver">Ir al inicio</a>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

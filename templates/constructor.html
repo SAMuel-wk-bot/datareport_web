@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Constructor visual | DataReport</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" defer></script>
+    <script src="{{ url_for('static', filename='js/constructor.js') }}" defer></script>
+</head>
+<body class="builder-body">
+<div class="builder-shell">
+    <aside class="builder-sidebar" id="builderSidebar">
+        <div class="builder-brand">
+            <img class="brand-logo builder-brand-logo" src="{{ url_for('static', filename='img/datareport-logo.png') }}" alt="DataReport Web Analytics">
+        </div>
+
+        <a class="builder-back" href="{{ url_for('analisis') }}">&#8592; Volver a configurar</a>
+
+        <div class="control-section">
+            <span class="control-kicker">Datos</span>
+            <h3>Campos del reporte</h3>
+            <label for="dimension">Dimensión</label>
+            <select id="dimension">
+                {% for columna in columnas %}
+                <option value="{{ columna }}" {% if columna == (categorias[0] if categorias else columnas[0]) %}selected{% endif %}>{{ columna }}</option>
+                {% endfor %}
+            </select>
+
+            <label for="metrica">Métrica</label>
+            <select id="metrica">
+                <option value="">Conteo de filas</option>
+                {% for columna in numericas %}<option value="{{ columna }}">{{ columna }}</option>{% endfor %}
+            </select>
+
+            <div class="builder-control-grid">
+                <div>
+                    <label for="agregacion">Cálculo</label>
+                    <select id="agregacion">
+                        <option value="sum">Suma</option><option value="mean">Promedio</option>
+                        <option value="count">Conteo</option><option value="min">Mínimo</option><option value="max">Máximo</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="limite">Elementos</label>
+                    <input id="limite" type="number" value="12" min="1" max="50">
+                </div>
+            </div>
+        </div>
+
+        <div class="control-section">
+            <span class="control-kicker">Diseño</span>
+            <h3>Personalización</h3>
+            <label for="tipoGrafico">Tipo de gráfico</label>
+            <select id="tipoGrafico">
+                <option value="bar">Barras</option><option value="line">Líneas</option>
+                <option value="pie">Circular</option><option value="doughnut">Dona</option><option value="polarArea">Área polar</option>
+            </select>
+            <div class="color-grid">
+                <label>Color principal<input id="colorPrincipal" type="color" value="#8e44ad"></label>
+                <label>Color secundario<input id="colorSecundario" type="color" value="#36c5f0"></label>
+            </div>
+            <label for="orden">Orden</label>
+            <select id="orden"><option value="desc">Mayor a menor</option><option value="asc">Menor a mayor</option></select>
+        </div>
+    </aside>
+
+    <main class="builder-main">
+        <header class="builder-topbar">
+            <button id="menuToggle" class="icon-button" type="button" aria-label="Mostrar u ocultar menú">&#9776;</button>
+            <div><span class="eyebrow">Dashboard interactivo</span><h1 id="dashboardTitle">{{ nombre }}</h1></div>
+            <div class="topbar-actions">
+                <button id="editTitle" class="soft-button" type="button">Editar título</button>
+                <button id="refreshDashboard" type="button">Actualizar</button>
+            </div>
+        </header>
+
+        <div id="builderMessage" class="builder-message" hidden></div>
+
+        <section class="builder-kpis">
+            <article><span>Filas cargadas</span><strong id="kpiFilas">--</strong></article>
+            <article><span>Categorías visibles</span><strong id="kpiCategorias">--</strong></article>
+            <article><span>Total visualizado</span><strong id="kpiTotal">--</strong></article>
+            <article><span>Promedio</span><strong id="kpiPromedio">--</strong></article>
+        </section>
+
+        <section class="visual-grid">
+            <article class="visual-card chart-card">
+                <div class="visual-heading"><div><span class="control-kicker">Visualización</span><h2 id="chartTitle">Análisis dinámico</h2></div><span class="live-pill">En vivo</span></div>
+                <div class="chart-wrap"><canvas id="dashboardChart"></canvas></div>
+            </article>
+
+            <article class="visual-card field-card">
+                <div class="visual-heading"><div><span class="control-kicker">Columnas</span><h2>Orden de la tabla</h2></div></div>
+                <p>Arrastra los campos para cambiar su posición.</p>
+                <div id="columnList" class="column-list"></div>
+            </article>
+        </section>
+
+        <section class="visual-card data-card">
+            <div class="visual-heading"><div><span class="control-kicker">Vista previa</span><h2>Datos del reporte</h2></div><span id="rowCount" class="data-count"></span></div>
+            <div class="tabla-contenedor"><table class="tabla builder-table"><thead id="tableHead"></thead><tbody id="tableBody"></tbody></table></div>
+        </section>
+    </main>
+</div>
+</body>
+</html>

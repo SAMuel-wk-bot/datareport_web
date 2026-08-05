@@ -1,0 +1,158 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Configurar análisis | DataReport</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+
+<div class="layout">
+
+    <aside class="sidebar">
+        <div class="logo">
+            <img class="brand-logo" src="{{ url_for('static', filename='img/datareport-logo.png') }}" alt="DataReport Web Analytics">
+        </div>
+
+        <nav>
+            <a href="/">Inicio</a>
+            <a href="/analisis" class="active" aria-current="page">Configurar</a>
+            <a href="#parametros">Reporte</a>
+            <a href="#vista-previa">Vista previa</a>
+        </nav>
+    </aside>
+
+    <main class="main">
+
+        <section class="hero small">
+            <span class="badge">Datos cargados</span>
+            <h1>Configura tu reporte</h1>
+            <p>
+                Archivo o fuente: <strong>{{ nombre }}</strong>. Selecciona las columnas que deseas analizar.
+            </p>
+        </section>
+
+        <section class="stats-grid">
+            <div class="stat-card">
+                <span>Filas</span>
+                <h2>{{ resumen.filas }}</h2>
+            </div>
+
+            <div class="stat-card">
+                <span>Columnas</span>
+                <h2>{{ resumen.columnas }}</h2>
+            </div>
+
+            <div class="stat-card">
+                <span>Datos vacíos</span>
+                <h2>{{ resumen.nulos }}</h2>
+            </div>
+
+            <div class="stat-card">
+                <span>Duplicados</span>
+                <h2>{{ resumen.duplicados }}</h2>
+            </div>
+        </section>
+
+        <section class="builder-callout">
+            <div>
+                <span class="eyebrow">Nuevo espacio interactivo</span>
+                <h2>Construye el dashboard a tu manera</h2>
+                <p>Cambia gráficos, colores y ordena columnas con una vista previa inmediata.</p>
+            </div>
+            <a href="{{ url_for('constructor') }}" class="boton-volver">Abrir constructor visual</a>
+        </section>
+
+        <section class="card" id="parametros">
+            <div class="section-title">
+                <h2>Parámetros del análisis</h2>
+                <p>Estos controles permiten generar reportes personalizados.</p>
+            </div>
+
+            <form action="/reporte" method="POST">
+
+                <div class="form-grid">
+                    <div>
+                        <label>Columna de fecha</label>
+                        <select name="fecha_col">
+                            <option value="">No usar fecha</option>
+                            {% for columna in columnas %}
+                                <option value="{{ columna }}" {% if columna == fecha_sugerida %}selected{% endif %}>
+                                    {{ columna }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label>Columna numérica</label>
+                        <select name="valor_col">
+                            <option value="">Conteo de registros</option>
+                            {% for columna in columnas %}
+                                <option value="{{ columna }}" {% if columna == numerica_sugerida %}selected{% endif %}>
+                                    {{ columna }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div>
+                        <label>Columna de categoría</label>
+                        <select name="categoria_col">
+                            <option value="">No usar categor&iacute;a</option>
+                            {% for columna in columnas %}
+                                <option value="{{ columna }}" {% if columna == categoria_sugerida %}selected{% endif %}>
+                                    {{ columna }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label>Tipo de cálculo</label>
+                        <select name="tipo_calculo">
+                            <option value="sum">Suma</option>
+                            <option value="mean">Promedio</option>
+                            <option value="count">Conteo</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div>
+                        <label>Fecha inicio</label>
+                        <input type="date" name="fecha_inicio">
+                    </div>
+
+                    <div>
+                        <label>Fecha fin</label>
+                        <input type="date" name="fecha_fin">
+                    </div>
+                </div>
+
+                <label>Cantidad de elementos en ranking</label>
+                <input type="number" name="top_n" value="10" min="1" max="50">
+
+                <button type="submit">Generar reporte dinámico</button>
+            </form>
+        </section>
+
+        <section class="card" id="vista-previa">
+            <div class="section-title">
+                <h2>Vista previa de los datos</h2>
+                <p>Primeros registros cargados.</p>
+            </div>
+
+            <div class="tabla-contenedor">
+                {{ vista_previa | safe }}
+            </div>
+        </section>
+
+    </main>
+</div>
+
+</body>
+</html>
