@@ -32,6 +32,10 @@ python app.py
 
 Abre [http://127.0.0.1:5000](http://127.0.0.1:5000) en el navegador.
 
+## Guía de usuario
+
+Consulta el [Manual de Usuario de DataReport](docs/Manual_de_Usuario_DataReport.pdf) para aprender a importar fuentes de datos, generar reportes, personalizar gráficos y resolver errores comunes.
+
 ## Flujo básico
 
 1. Carga un archivo compatible o conecta una tabla MySQL.
