@@ -34,7 +34,7 @@ from models import Dataset, SavedReport, User
 from pdf_reports import build_dataset_pdf
 from security import development_fernet_key
 from security_headers import apply_security_headers
-from statistics_engine import descriptive, matrix, scalar
+from statistics_engine import descriptive, matrix, parse_numeric_series, scalar
 
 app = Flask(__name__)
 app.config.update(
@@ -767,26 +767,32 @@ def reporte():
 @app.route("/estadistica", methods=["GET", "POST"])
 def laboratorio_estadistico():
     df = obtener_dataframe_actual()
-    if df is None:
-        return respuesta_error("No hay datos cargados", "Carga una fuente antes de abrir el laboratorio estadístico.", 404)
-    _, numerics, _, _ = detectar_columnas(df)
+    numerics = detectar_columnas(df)[1] if df is not None else []
     result = None
     error = None
     if request.method == "POST":
         family = request.form.get("family")
         operation = request.form.get("operation")
+        source_mode = request.form.get("source_mode", "manual")
         try:
             if family == "descriptive":
-                column = request.form.get("column")
-                if column not in df.columns:
-                    raise ValueError("Selecciona una columna numérica válida.")
-                weights = None
-                if operation == "weighted_mean":
-                    weight_column = request.form.get("weight_column")
-                    if weight_column not in df.columns:
-                        raise ValueError("Selecciona una columna de ponderación válida.")
-                    weights = df[weight_column]
-                result = descriptive(operation, df[column], weights)
+                if source_mode == "dataset":
+                    if df is None:
+                        raise ValueError("No hay una base cargada. Usa el modo manual o carga datos desde Inicio.")
+                    column = request.form.get("column")
+                    if column not in df.columns:
+                        raise ValueError("Selecciona una columna numérica válida.")
+                    values = df[column]
+                    weights = None
+                    if operation == "weighted_mean":
+                        weight_column = request.form.get("weight_column")
+                        if weight_column not in df.columns:
+                            raise ValueError("Selecciona una columna de ponderación válida.")
+                        weights = df[weight_column]
+                else:
+                    values = parse_numeric_series(request.form.get("manual_values", ""))
+                    weights = parse_numeric_series(request.form.get("manual_weights", "")) if operation == "weighted_mean" else None
+                result = descriptive(operation, values, weights)
             elif family == "scalar":
                 result = scalar(operation, request.form.get("value", ""))
             elif family == "matrix":
@@ -795,7 +801,7 @@ def laboratorio_estadistico():
                 raise ValueError("Selecciona una familia de operaciones válida.")
         except (ValueError, TypeError) as exc:
             error = str(exc)
-    return render_template("statistics.html", numerics=numerics, result=result, error=error)
+    return render_template("statistics.html", numerics=numerics, has_dataset=df is not None, result=result, error=error)
 
 
 @app.route("/reporte/pdf", methods=["POST"])

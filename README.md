@@ -73,7 +73,7 @@ Nunca uses los valores de desarrollo en producción. Configura un servicio SMTP,
 
 ## Laboratorio estadístico
 
-Después de cargar una fuente, abre **Laboratorio estadístico** desde la configuración. El módulo admite:
+Abre **Cálculos matemáticos** desde la página principal. El laboratorio funciona sin cargar una base: puedes escribir valores y ponderaciones separados por comas, punto y coma o saltos de línea. Si ya importaste datos, también puedes seleccionar directamente sus columnas. El módulo admite:
 
 - media, mediana, moda, varianza y desviación estándar;
 - media ponderada con una columna de ponderaciones;

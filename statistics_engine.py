@@ -4,6 +4,26 @@ import numpy as np
 import pandas as pd
 
 
+def parse_numeric_series(text):
+    if not text or not text.strip():
+        raise ValueError("Escribe al menos un valor numérico.")
+    normalized = text.replace(";", ",").replace("\n", ",")
+    values = []
+    for position, raw_value in enumerate(normalized.split(","), start=1):
+        raw_value = raw_value.strip()
+        if not raw_value:
+            continue
+        try:
+            values.append(float(raw_value))
+        except ValueError as exc:
+            raise ValueError(f"El valor {position} ('{raw_value}') no es numérico.") from exc
+    if not values:
+        raise ValueError("Escribe al menos un valor numérico.")
+    if len(values) > 10000:
+        raise ValueError("El cálculo manual admite hasta 10 000 valores.")
+    return pd.Series(values, dtype=float)
+
+
 def _numbers(series):
     values = pd.to_numeric(series, errors="coerce").dropna().astype(float).tolist()
     if not values:

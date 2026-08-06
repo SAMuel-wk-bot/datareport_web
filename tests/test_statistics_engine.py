@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from statistics_engine import descriptive, matrix, scalar
+from statistics_engine import descriptive, matrix, parse_numeric_series, scalar
 
 
 def test_descriptive_operations_show_steps():
@@ -28,3 +28,8 @@ def test_scalar_validation():
     assert scalar("square", 12)["result"] == 144
     with pytest.raises(ValueError):
         scalar("sqrt", -1)
+
+
+def test_manual_series_accepts_common_separators():
+    values = parse_numeric_series("10, 20; 30\n40")
+    assert values.tolist() == [10, 20, 30, 40]

@@ -48,3 +48,14 @@ def test_password_confirmation_is_required():
     response = app.test_client().post("/cuenta/registro", data={"display_name": "Prueba", "email": "otra@example.com", "password": "ClaveSegura#2026", "password_confirmation": "Distinta#2026", "cf-turnstile-response": "local"})
     assert response.status_code == 400
     assert "no coinciden" in response.get_data(as_text=True)
+
+
+def test_math_lab_works_without_dataset():
+    app.config.update(TESTING=True, WTF_CSRF_ENABLED=False)
+    client = app.test_client()
+    assert client.get("/estadistica").status_code == 200
+    response = client.post("/estadistica", data={"family": "descriptive", "operation": "mean", "source_mode": "manual", "manual_values": "10,20,30"})
+    assert response.status_code == 200
+    page = response.get_data(as_text=True)
+    assert "Media aritmética" in page
+    assert ">20<" in page
