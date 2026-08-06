@@ -77,3 +77,14 @@ Después de cargar una fuente, abre **Laboratorio estadístico** desde la config
 - transpuesta, determinante, inversa y multiplicación de matrices de hasta 10 × 10.
 
 Cada cálculo presenta la fórmula, los valores utilizados, los pasos intermedios y el resultado. Los datos no numéricos se excluyen explícitamente y las matrices incompatibles generan mensajes de validación.
+
+## Verificación de seguridad
+
+Los archivos importados se cifran en reposo con Fernet. Para ejecutar pruebas funcionales, análisis estático y auditoría de dependencias:
+
+```powershell
+pip install -r requirements-dev.txt
+.\security_checks.ps1
+```
+
+Consulta [SECURITY.md](SECURITY.md) para conocer controles, requisitos de producción, rotación de secretos y límites de las pruebas automatizadas.

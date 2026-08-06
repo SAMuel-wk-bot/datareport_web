@@ -1,27 +1,38 @@
-﻿from flask import Flask, render_template, request, redirect, url_for, session
-import pandas as pd
-from flask import jsonify, send_file
-from flask_login import current_user, login_required
-import json
-import csv
+﻿import csv
 import io
+import json
 import os
-import uuid
 import re
-import mysql.connector
+import uuid
+from datetime import timedelta
+
 import matplotlib
+import mysql.connector
+import pandas as pd
+from flask import (
+    Flask,
+    jsonify,
+    redirect,
+    render_template,
+    request,
+    send_file,
+    session,
+    url_for,
+)
+from flask_login import current_user, login_required
+from flask_wtf.csrf import CSRFError
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-
 from werkzeug.utils import secure_filename
 
 from auth import auth_bp
+from encrypted_storage import decrypted_file, encrypt_file
 from extensions import csrf, db, limiter, login_manager, mail
-from models import Dataset, User
-from security import development_fernet_key
-from models import SavedReport
+from models import Dataset, SavedReport, User
 from pdf_reports import build_dataset_pdf
+from security import development_fernet_key
+from security_headers import apply_security_headers
 from statistics_engine import descriptive, matrix, scalar
 
 app = Flask(__name__)
@@ -45,7 +56,16 @@ app.config.update(
     MAIL_DEFAULT_SENDER=os.environ.get("MAIL_DEFAULT_SENDER", "no-reply@datareport.local"),
     MAIL_SUPPRESS_SEND=os.environ.get("MAIL_SUPPRESS_SEND", "1") == "1",
     RATELIMIT_STORAGE_URI=os.environ.get("RATELIMIT_STORAGE_URI", "memory://"),
+    PERMANENT_SESSION_LIFETIME=timedelta(hours=8),
 )
+
+if os.environ.get("FLASK_ENV") == "production":
+    if app.config["SECRET_KEY"] == "development-only-change-me":
+        raise RuntimeError("SECRET_KEY es obligatoria en producción.")
+    if not os.environ.get("DATA_ENCRYPTION_KEY"):
+        raise RuntimeError("DATA_ENCRYPTION_KEY es obligatoria en producción.")
+    if not app.config["SESSION_COOKIE_SECURE"]:
+        raise RuntimeError("COOKIE_SECURE=1 es obligatorio en producción.")
 
 UPLOAD_FOLDER = "uploads"
 CHART_FOLDER = "static/reportes"
@@ -70,6 +90,8 @@ def load_user(user_id):
 
 with app.app_context():
     db.create_all()
+
+app.after_request(apply_security_headers)
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(CHART_FOLDER, exist_ok=True)
@@ -261,8 +283,14 @@ def obtener_dataframe_actual():
 
     if not ruta or not os.path.exists(ruta):
         return None
-
-    return leer_archivo(ruta)
+    dataset_id = session.get("dataset_id")
+    if current_user.is_authenticated and dataset_id:
+        dataset = db.session.get(Dataset, dataset_id)
+        if not dataset or dataset.user_id != current_user.id or dataset.storage_path != ruta:
+            session.pop("data_file", None)
+            return None
+    with decrypted_file(ruta, session.get("data_ext", ".csv")) as clear_path:
+        return leer_archivo(clear_path)
 
 
 def generar_resumen(df):
@@ -401,7 +429,9 @@ def subir_archivo():
             sugerencias=["Verifica que el archivo no esté dañado.", "Si es SQL, debe contener instrucciones INSERT INTO ... VALUES."],
         )
 
+    ruta = encrypt_file(ruta)
     session["data_file"] = ruta
+    session["data_ext"] = extension
     if extension == ".sql":
         tabla_sql = df_validacion.attrs.get("sql_table", "tabla importada")
         session["data_name"] = f"{filename} · tabla: {tabla_sql}"
@@ -449,15 +479,19 @@ def mysql_datos():
             database=base_datos
         )
 
-        consulta = "SELECT * FROM " + tabla
+        # MySQL no permite parametrizar identificadores. La expresión regular anterior
+        # restringe el nombre a un único identificador y los backticks lo delimitan.
+        consulta = f"SELECT * FROM `{tabla}`"  # nosec B608
         df = pd.read_sql(consulta, conexion)
         conexion.close()
 
         nombre_unico = f"mysql_{uuid.uuid4().hex}.csv"
         ruta = os.path.join(app.config["UPLOAD_FOLDER"], nombre_unico)
         df.to_csv(ruta, index=False, encoding="utf-8")
+        ruta = encrypt_file(ruta)
 
         session["data_file"] = ruta
+        session["data_ext"] = ".csv"
         session["data_name"] = f"MySQL: {base_datos}.{tabla}"
         session["data_source"] = "mysql"
 
@@ -789,6 +823,26 @@ def pagina_no_encontrada(error):
         "La dirección solicitada no existe o fue movida.",
         404,
         ["Revisa la dirección o regresa al inicio."],
+    )
+
+
+@app.errorhandler(CSRFError)
+def csrf_invalido(error):
+    return respuesta_error(
+        "La sesión de seguridad venció",
+        "Actualiza la página y vuelve a intentar la operación.",
+        400,
+        ["No reutilices formularios abiertos durante varias horas."],
+    )
+
+
+@app.errorhandler(429)
+def demasiadas_solicitudes(error):
+    return respuesta_error(
+        "Demasiados intentos",
+        "El acceso fue limitado temporalmente para proteger tu cuenta.",
+        429,
+        ["Espera unos minutos antes de volver a intentar."],
     )
 
 

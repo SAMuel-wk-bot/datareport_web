@@ -1,10 +1,8 @@
-import io
 
 import pandas as pd
 
 from app import app
 from extensions import db
-from models import User
 from pdf_reports import build_dataset_pdf
 
 

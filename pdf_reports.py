@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from io import BytesIO
 
 from reportlab.lib import colors
@@ -26,7 +26,7 @@ def build_dataset_pdf(df, title, owner, primary="#6F2DBD", secondary="#B58CFF", 
     styles.add(ParagraphStyle(name="ReportTitle", parent=styles["Title"], fontName="Helvetica-Bold", fontSize=25, leading=30, textColor=primary_color, alignment=TA_CENTER, spaceAfter=9 * mm))
     styles.add(ParagraphStyle(name="Section", parent=styles["Heading2"], fontName="Helvetica-Bold", textColor=primary_color, spaceBefore=5 * mm, spaceAfter=3 * mm))
     styles.add(ParagraphStyle(name="TableHeader", parent=styles["BodyText"], fontName="Helvetica-Bold", textColor=colors.white, fontSize=8))
-    story = [Paragraph("DATAREPORT | REPORTE ANALÍTICO", styles["Normal"]), Spacer(1, 5 * mm), Paragraph(title, styles["ReportTitle"]), Paragraph(f"Preparado para {owner} | {datetime.now().strftime('%d/%m/%Y %H:%M')}", styles["Normal"]), Spacer(1, 7 * mm)]
+    story = [Paragraph("DATAREPORT | REPORTE ANALÍTICO", styles["Normal"]), Spacer(1, 5 * mm), Paragraph(title, styles["ReportTitle"]), Paragraph(f"Preparado para {owner} | {datetime.now(timezone.utc).astimezone().strftime('%d/%m/%Y %H:%M')}", styles["Normal"]), Spacer(1, 7 * mm)]
     metrics = [["Registros", f"{len(df):,}"], ["Columnas", str(len(df.columns))], ["Valores vacíos", f"{int(df.isna().sum().sum()):,}"], ["Duplicados", f"{int(df.duplicated().sum()):,}"]]
     metric_table = Table(metrics, colWidths=[45 * mm, 35 * mm], hAlign="CENTER")
     metric_table.setStyle(TableStyle([("BACKGROUND", (0, 0), (0, -1), primary_color), ("TEXTCOLOR", (0, 0), (0, -1), colors.white), ("BACKGROUND", (1, 0), (1, -1), colors.HexColor("#F5F0FA")), ("FONTNAME", (0, 0), (-1, -1), "Helvetica-Bold"), ("ALIGN", (1, 0), (1, -1), "RIGHT"), ("GRID", (0, 0), (-1, -1), .4, colors.HexColor("#DED3EA")), ("PADDING", (0, 0), (-1, -1), 8)]))
