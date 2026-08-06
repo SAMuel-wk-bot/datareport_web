@@ -1,1 +1,21 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Mi espacio | DataReport</title><link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}"></head><body><header class="topbar"><a href="{{ url_for('dashboard') }}"><img src="{{ url_for('static', filename='img/datareport-logo.png') }}" alt="DataReport"></a><nav><a href="{{ url_for('index') }}">Importar datos</a><a href="{{ url_for('auth.enable_two_factor') }}">Seguridad 2FA</a><form action="{{ url_for('auth.logout') }}" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit">Salir</button></form></nav></header><main class="page-shell"><section class="hero"><span class="eyebrow">ESPACIO PERSONAL</span><h1>Hola, {{ current_user.display_name }}</h1><p>Tus fuentes y reportes quedan asociados a tu cuenta.</p></section><section class="panel"><h2>Datos guardados</h2>{% if datasets %}<div class="dataset-grid">{% for item in datasets %}<article class="dataset-card"><span>{{ item.source_type|upper }}</span><h3>{{ item.name }}</h3><p>{{ item.row_count }} filas · {{ item.column_count }} columnas</p><small>{{ item.created_at.strftime('%d/%m/%Y %H:%M') }}</small></article>{% endfor %}</div>{% else %}<p>Aún no tienes fuentes guardadas. <a href="{{ url_for('index') }}">Carga la primera</a>.</p>{% endif %}</section></main></body></html>
+<!doctype html>
+<html lang="es">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Mi perfil | DataReport</title><link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}"></head>
+<body>
+<header class="topbar">
+  <a href="{{ url_for('index') }}"><img src="{{ url_for('static', filename='img/datareport-logo.png') }}" alt="DataReport"></a>
+  <nav><a href="{{ url_for('index') }}">Página principal</a><a href="{{ url_for('auth.enable_two_factor') }}">Seguridad 2FA</a><form action="{{ url_for('auth.logout') }}" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit">Salir</button></form></nav>
+</header>
+<main class="page-shell profile-page">
+  <section class="profile-hero"><div><span class="eyebrow">MI PERFIL</span><h1>{{ current_user.display_name }}</h1><p>{{ current_user.email }}</p></div><div class="profile-security"><span>Cuenta verificada</span><strong>{% if current_user.two_factor_enabled %}2FA activo{% else %}2FA pendiente{% endif %}</strong></div></section>
+  <section class="profile-metrics" aria-label="Métricas de la cuenta">
+    <article><span>Fuentes guardadas</span><strong>{{ metrics.datasets }}</strong></article>
+    <article><span>Filas procesadas</span><strong>{{ '{:,}'.format(metrics.rows) }}</strong></article>
+    <article><span>Columnas analizadas</span><strong>{{ '{:,}'.format(metrics.columns) }}</strong></article>
+    <article><span>Reportes PDF</span><strong>{{ metrics.reports }}</strong></article>
+  </section>
+  <section class="panel profile-data"><div class="section-heading"><div><span class="eyebrow">HISTORIAL</span><h2>Mis fuentes de datos</h2></div><a class="btn-primary" href="{{ url_for('index') }}">Agregar datos</a></div>
+    {% if datasets %}<div class="dataset-grid">{% for item in datasets %}<article class="dataset-card"><span>{{ item.source_type|upper }}</span><h3>{{ item.name }}</h3><p>{{ item.row_count }} filas · {{ item.column_count }} columnas</p><small>{{ item.created_at.strftime('%d/%m/%Y %H:%M') }}</small></article>{% endfor %}</div>{% else %}<div class="empty-profile"><h3>Todavía no tienes métricas guardadas</h3><p>Importa una fuente desde la página principal. Al usar tu cuenta, sus métricas se agregarán automáticamente aquí.</p><a href="{{ url_for('index') }}">Cargar mi primera base de datos</a></div>{% endif %}
+  </section>
+</main>
+</body></html>

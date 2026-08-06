@@ -57,12 +57,16 @@ El importador busca instrucciones `CREATE TABLE` e `INSERT INTO ... VALUES`. No 
 
 La aplicación usa SQLite durante el desarrollo y acepta SQL Server en producción mediante SQLAlchemy y `pyodbc`. Copia `.env.example`, genera secretos nuevos y configura `DATABASE_URL` con el controlador ODBC 18.
 
+El inicio de sesión es opcional: un invitado puede importar y analizar datos durante su sesión. Al crear una cuenta, las fuentes, métricas y reportes PDF se guardan en el perfil personal. Después de autenticarse, el usuario regresa directamente a la página principal de importación.
+
 - Registro con contraseña robusta y verificación de correo.
+- Confirmación obligatoria de contraseña durante el registro.
 - Recuperación de contraseña mediante enlaces firmados con vencimiento.
 - Segundo factor TOTP compatible con aplicaciones autenticadoras.
 - Cloudflare Turnstile configurable para proteger el registro.
 - Bloqueo temporal y límites de solicitudes ante intentos repetidos.
 - Fuentes y configuraciones de reporte asociadas a cada usuario.
+- Perfil con métricas acumuladas de fuentes, filas, columnas y reportes PDF.
 - Exportación PDF con título, colores y orientación personalizados.
 
 Nunca uses los valores de desarrollo en producción. Configura un servicio SMTP, Turnstile, HTTPS, Redis para los límites distribuidos y una clave Fernet independiente.

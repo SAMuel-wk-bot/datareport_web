@@ -50,7 +50,10 @@ def register():
         email = request.form.get("email", "").strip().lower()
         name = request.form.get("display_name", "").strip()
         password = request.form.get("password", "")
+        password_confirmation = request.form.get("password_confirmation", "")
         errors = validate_password(password)
+        if password != password_confirmation:
+            errors.append("Las contraseñas no coinciden.")
         if not verify_captcha(request.form.get("cf-turnstile-response")):
             errors.append("No fue posible validar el CAPTCHA.")
         if not name or "@" not in email:
@@ -112,7 +115,7 @@ def login():
         db.session.commit()
         login_user(user)
         _audit("login_success", user.id)
-        return redirect(url_for("dashboard"))
+        return redirect(url_for("index"))
     return render_template("auth/login.html", error=None)
 
 
@@ -126,7 +129,7 @@ def two_factor_login():
         session.pop("pending_2fa_user", None)
         login_user(user)
         _audit("login_2fa_success", user.id)
-        return redirect(url_for("dashboard"))
+        return redirect(url_for("index"))
     return render_template("auth/two_factor.html", setup=False, secret=None, error="Código inválido." if request.method == "POST" else None)
 
 

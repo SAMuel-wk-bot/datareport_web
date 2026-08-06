@@ -1,1 +1,17 @@
-{% extends 'auth/_shell.html' %}{% set title='Crear cuenta' %}{% block form %}<span class="eyebrow">NUEVA CUENTA</span><h2>Empieza a crear reportes</h2>{% if errors %}<div class="notice error"><ul>{% for error in errors %}<li>{{ error }}</li>{% endfor %}</ul></div>{% endif %}<form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label>Nombre<input name="display_name" maxlength="80" required></label><label>Correo<input type="email" name="email" autocomplete="email" required></label><label>Contraseña<input type="password" name="password" autocomplete="new-password" required><small>12+ caracteres, mayúscula, minúscula, número y símbolo.</small></label>{% if config.TURNSTILE_SITE_KEY %}<div class="cf-turnstile" data-sitekey="{{ config.TURNSTILE_SITE_KEY }}"></div>{% else %}<input type="hidden" name="cf-turnstile-response" value="local-development">{% endif %}<button class="btn-primary" type="submit">Crear cuenta segura</button></form><div class="auth-links"><a href="{{ url_for('auth.login') }}">Ya tengo cuenta</a></div>{% endblock %}
+{% extends 'auth/_shell.html' %}
+{% set title='Crear cuenta' %}
+{% block form %}
+<span class="eyebrow">NUEVA CUENTA</span>
+<h2>Empieza a crear reportes</h2>
+{% if errors %}<div class="notice error"><ul>{% for error in errors %}<li>{{ error }}</li>{% endfor %}</ul></div>{% endif %}
+<form method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label>Nombre<input name="display_name" maxlength="80" required></label>
+  <label>Correo<input type="email" name="email" autocomplete="email" required></label>
+  <label>Contraseña<input type="password" name="password" autocomplete="new-password" required><small>12+ caracteres, mayúscula, minúscula, número y símbolo.</small></label>
+  <label>Confirmar contraseña<input type="password" name="password_confirmation" autocomplete="new-password" required></label>
+  {% if config.TURNSTILE_SITE_KEY %}<div class="cf-turnstile" data-sitekey="{{ config.TURNSTILE_SITE_KEY }}"></div>{% else %}<input type="hidden" name="cf-turnstile-response" value="local-development">{% endif %}
+  <button class="btn-primary" type="submit">Crear cuenta segura</button>
+</form>
+<div class="auth-links"><a href="{{ url_for('auth.login') }}">Ya tengo cuenta</a><a href="{{ url_for('index') }}">Continuar como invitado</a></div>
+{% endblock %}

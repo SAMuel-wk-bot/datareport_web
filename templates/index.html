@@ -20,6 +20,11 @@
             <a href="#carga-datos">Carga de datos</a>
             <a href="#funciones">Reportes</a>
             <a href="#funciones">Métricas</a>
+            {% if current_user.is_authenticated %}
+            <a href="{{ url_for('dashboard') }}" class="profile-button">Mi perfil</a>
+            {% else %}
+            <a href="{{ url_for('auth.login') }}" class="profile-button">Iniciar sesión</a>
+            {% endif %}
         </nav>
     </aside>
 

@@ -21,6 +21,7 @@ from flask import (
 )
 from flask_login import current_user, login_required
 from flask_wtf.csrf import CSRFError
+from sqlalchemy import func
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -380,8 +381,6 @@ def crear_grafico_categoria(tabla_categoria, valor_col):
 
 @app.route("/")
 def index():
-    if not current_user.is_authenticated:
-        return redirect(url_for("auth.login"))
     return render_template("index.html")
 
 
@@ -389,11 +388,16 @@ def index():
 @login_required
 def dashboard():
     datasets = Dataset.query.filter_by(user_id=current_user.id).order_by(Dataset.created_at.desc()).limit(20).all()
-    return render_template("dashboard.html", datasets=datasets)
+    metrics = {
+        "datasets": Dataset.query.filter_by(user_id=current_user.id).count(),
+        "rows": db.session.query(func.coalesce(func.sum(Dataset.row_count), 0)).filter(Dataset.user_id == current_user.id).scalar(),
+        "columns": db.session.query(func.coalesce(func.sum(Dataset.column_count), 0)).filter(Dataset.user_id == current_user.id).scalar(),
+        "reports": SavedReport.query.filter_by(user_id=current_user.id).count(),
+    }
+    return render_template("dashboard.html", datasets=datasets, metrics=metrics)
 
 
 @app.route("/subir", methods=["POST"])
-@login_required
 def subir_archivo():
     archivo = request.files.get("archivo")
 
@@ -439,16 +443,17 @@ def subir_archivo():
         session["data_name"] = filename
     session["data_source"] = "archivo"
 
-    dataset = Dataset(user_id=current_user.id, name=session["data_name"], source_type="archivo", storage_path=ruta, row_count=df_validacion.shape[0], column_count=df_validacion.shape[1])
-    db.session.add(dataset)
-    db.session.commit()
-    session["dataset_id"] = dataset.id
+    session.pop("dataset_id", None)
+    if current_user.is_authenticated:
+        dataset = Dataset(user_id=current_user.id, name=session["data_name"], source_type="archivo", storage_path=ruta, row_count=df_validacion.shape[0], column_count=df_validacion.shape[1])
+        db.session.add(dataset)
+        db.session.commit()
+        session["dataset_id"] = dataset.id
 
     return redirect(url_for("analisis"))
 
 
 @app.route("/mysql", methods=["POST"])
-@login_required
 def mysql_datos():
     host = request.form.get("host", "").strip()
     puerto = request.form.get("puerto", "3306").strip()
@@ -495,10 +500,12 @@ def mysql_datos():
         session["data_name"] = f"MySQL: {base_datos}.{tabla}"
         session["data_source"] = "mysql"
 
-        dataset = Dataset(user_id=current_user.id, name=session["data_name"], source_type="mysql", storage_path=ruta, row_count=df.shape[0], column_count=df.shape[1])
-        db.session.add(dataset)
-        db.session.commit()
-        session["dataset_id"] = dataset.id
+        session.pop("dataset_id", None)
+        if current_user.is_authenticated:
+            dataset = Dataset(user_id=current_user.id, name=session["data_name"], source_type="mysql", storage_path=ruta, row_count=df.shape[0], column_count=df.shape[1])
+            db.session.add(dataset)
+            db.session.commit()
+            session["dataset_id"] = dataset.id
 
         return redirect(url_for("analisis"))
 
@@ -512,7 +519,6 @@ def mysql_datos():
 
 
 @app.route("/analisis")
-@login_required
 def analisis():
     df = obtener_dataframe_actual()
 
@@ -545,7 +551,6 @@ def analisis():
 
 
 @app.route("/constructor")
-@login_required
 def constructor():
     df = obtener_dataframe_actual()
     if df is None:
@@ -568,7 +573,6 @@ def constructor():
 
 
 @app.route("/api/datos")
-@login_required
 def api_datos():
     df = obtener_dataframe_actual()
     if df is None:
@@ -590,7 +594,6 @@ def api_datos():
 
 @app.route("/api/visualizacion", methods=["POST"])
 @csrf.exempt
-@login_required
 def api_visualizacion():
     df = obtener_dataframe_actual()
     if df is None:
@@ -636,7 +639,6 @@ def api_visualizacion():
 
 
 @app.route("/reporte", methods=["POST"])
-@login_required
 def reporte():
     df = obtener_dataframe_actual()
 
@@ -763,7 +765,6 @@ def reporte():
 
 
 @app.route("/estadistica", methods=["GET", "POST"])
-@login_required
 def laboratorio_estadistico():
     df = obtener_dataframe_actual()
     if df is None:
@@ -798,7 +799,6 @@ def laboratorio_estadistico():
 
 
 @app.route("/reporte/pdf", methods=["POST"])
-@login_required
 def exportar_reporte_pdf():
     df = obtener_dataframe_actual()
     if df is None:
@@ -809,11 +809,15 @@ def exportar_reporte_pdf():
     orientation = request.form.get("orientation", "portrait")
     if orientation not in {"portrait", "landscape"}:
         orientation = "portrait"
-    report = SavedReport(user_id=current_user.id, dataset_id=session.get("dataset_id"), title=title, configuration={"primary": primary, "secondary": secondary, "orientation": orientation})
-    db.session.add(report)
-    db.session.commit()
-    pdf = build_dataset_pdf(df, title, current_user.display_name, primary, secondary, orientation)
-    return send_file(pdf, mimetype="application/pdf", as_attachment=True, download_name=f"datareport-{report.id}.pdf")
+    owner = current_user.display_name if current_user.is_authenticated else "Usuario invitado"
+    report_id = "invitado"
+    if current_user.is_authenticated:
+        report = SavedReport(user_id=current_user.id, dataset_id=session.get("dataset_id"), title=title, configuration={"primary": primary, "secondary": secondary, "orientation": orientation})
+        db.session.add(report)
+        db.session.commit()
+        report_id = report.id
+    pdf = build_dataset_pdf(df, title, owner, primary, secondary, orientation)
+    return send_file(pdf, mimetype="application/pdf", as_attachment=True, download_name=f"datareport-{report_id}.pdf")
 
 
 @app.errorhandler(404)
