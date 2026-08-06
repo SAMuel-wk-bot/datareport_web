@@ -22,6 +22,7 @@ from models import Dataset, User
 from security import development_fernet_key
 from models import SavedReport
 from pdf_reports import build_dataset_pdf
+from statistics_engine import descriptive, matrix, scalar
 
 app = Flask(__name__)
 app.config.update(
@@ -725,6 +726,41 @@ def reporte():
         grafico_categoria=grafico_categoria,
         vista_previa=vista_previa
     )
+
+
+@app.route("/estadistica", methods=["GET", "POST"])
+@login_required
+def laboratorio_estadistico():
+    df = obtener_dataframe_actual()
+    if df is None:
+        return respuesta_error("No hay datos cargados", "Carga una fuente antes de abrir el laboratorio estadístico.", 404)
+    _, numerics, _, _ = detectar_columnas(df)
+    result = None
+    error = None
+    if request.method == "POST":
+        family = request.form.get("family")
+        operation = request.form.get("operation")
+        try:
+            if family == "descriptive":
+                column = request.form.get("column")
+                if column not in df.columns:
+                    raise ValueError("Selecciona una columna numérica válida.")
+                weights = None
+                if operation == "weighted_mean":
+                    weight_column = request.form.get("weight_column")
+                    if weight_column not in df.columns:
+                        raise ValueError("Selecciona una columna de ponderación válida.")
+                    weights = df[weight_column]
+                result = descriptive(operation, df[column], weights)
+            elif family == "scalar":
+                result = scalar(operation, request.form.get("value", ""))
+            elif family == "matrix":
+                result = matrix(operation, request.form.get("matrix_a", ""), request.form.get("matrix_b", ""))
+            else:
+                raise ValueError("Selecciona una familia de operaciones válida.")
+        except (ValueError, TypeError) as exc:
+            error = str(exc)
+    return render_template("statistics.html", numerics=numerics, result=result, error=error)
 
 
 @app.route("/reporte/pdf", methods=["POST"])

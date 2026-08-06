@@ -66,3 +66,14 @@ La aplicación usa SQLite durante el desarrollo y acepta SQL Server en producci�
 - Exportación PDF con título, colores y orientación personalizados.
 
 Nunca uses los valores de desarrollo en producción. Configura un servicio SMTP, Turnstile, HTTPS, Redis para los límites distribuidos y una clave Fernet independiente.
+
+## Laboratorio estadístico
+
+Después de cargar una fuente, abre **Laboratorio estadístico** desde la configuración. El módulo admite:
+
+- media, mediana, moda, varianza y desviación estándar;
+- media ponderada con una columna de ponderaciones;
+- cuadrados y raíces cuadradas;
+- transpuesta, determinante, inversa y multiplicación de matrices de hasta 10 × 10.
+
+Cada cálculo presenta la fórmula, los valores utilizados, los pasos intermedios y el resultado. Los datos no numéricos se excluyen explícitamente y las matrices incompatibles generan mensajes de validación.
