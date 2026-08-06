@@ -8,6 +8,8 @@
 </head>
 <body>
 
+<section class="pdf-export"><div><span class="eyebrow">EXPORTACIÓN PROFESIONAL</span><h2>Diseña tu reporte PDF</h2><p>Personaliza el título, la paleta y la orientación.</p></div><form action="{{ url_for('exportar_reporte_pdf') }}" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label>Título<input name="pdf_title" value="Reporte de {{ nombre }}" maxlength="180"></label><label>Principal<input type="color" name="primary_color" value="#6F2DBD"></label><label>Secundario<input type="color" name="secondary_color" value="#B58CFF"></label><label>Orientación<select name="orientation"><option value="portrait">Vertical</option><option value="landscape">Horizontal</option></select></label><button type="submit" class="btn-primary">Descargar PDF</button></form></section>
+
 <div class="layout">
 
     <aside class="sidebar">

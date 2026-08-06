@@ -1,6 +1,7 @@
 ﻿from flask import Flask, render_template, request, redirect, url_for, session
 import pandas as pd
-from flask import jsonify
+from flask import jsonify, send_file
+from flask_login import current_user, login_required
 import json
 import csv
 import io
@@ -15,14 +16,59 @@ import matplotlib.pyplot as plt
 
 from werkzeug.utils import secure_filename
 
+from auth import auth_bp
+from extensions import csrf, db, limiter, login_manager, mail
+from models import Dataset, User
+from security import development_fernet_key
+from models import SavedReport
+from pdf_reports import build_dataset_pdf
+
 app = Flask(__name__)
-app.secret_key = "datareport-web-secret-key"
+app.config.update(
+    SECRET_KEY=os.environ.get("SECRET_KEY", "development-only-change-me"),
+    SQLALCHEMY_DATABASE_URI=os.environ.get("DATABASE_URL", "sqlite:///datareport.db"),
+    SQLALCHEMY_TRACK_MODIFICATIONS=False,
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_SECURE=os.environ.get("COOKIE_SECURE", "0") == "1",
+    DATA_ENCRYPTION_KEY=os.environ.get("DATA_ENCRYPTION_KEY", development_fernet_key()),
+    TURNSTILE_SITE_KEY=os.environ.get("TURNSTILE_SITE_KEY"),
+    TURNSTILE_SECRET_KEY=os.environ.get("TURNSTILE_SECRET_KEY"),
+    ALLOW_LOCAL_CAPTCHA_BYPASS=os.environ.get("FLASK_ENV") != "production",
+    ALLOW_UNVERIFIED_LOGIN=os.environ.get("FLASK_ENV") != "production",
+    MAIL_SERVER=os.environ.get("MAIL_SERVER", "localhost"),
+    MAIL_PORT=int(os.environ.get("MAIL_PORT", "25")),
+    MAIL_USE_TLS=os.environ.get("MAIL_USE_TLS", "0") == "1",
+    MAIL_USERNAME=os.environ.get("MAIL_USERNAME"),
+    MAIL_PASSWORD=os.environ.get("MAIL_PASSWORD"),
+    MAIL_DEFAULT_SENDER=os.environ.get("MAIL_DEFAULT_SENDER", "no-reply@datareport.local"),
+    MAIL_SUPPRESS_SEND=os.environ.get("MAIL_SUPPRESS_SEND", "1") == "1",
+    RATELIMIT_STORAGE_URI=os.environ.get("RATELIMIT_STORAGE_URI", "memory://"),
+)
 
 UPLOAD_FOLDER = "uploads"
 CHART_FOLDER = "static/reportes"
 
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024
+
+db.init_app(app)
+login_manager.init_app(app)
+login_manager.login_view = "auth.login"
+login_manager.login_message = "Inicia sesión para continuar."
+csrf.init_app(app)
+mail.init_app(app)
+limiter.init_app(app)
+app.register_blueprint(auth_bp)
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    return db.session.get(User, int(user_id))
+
+
+with app.app_context():
+    db.create_all()
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(CHART_FOLDER, exist_ok=True)
@@ -305,10 +351,20 @@ def crear_grafico_categoria(tabla_categoria, valor_col):
 
 @app.route("/")
 def index():
+    if not current_user.is_authenticated:
+        return redirect(url_for("auth.login"))
     return render_template("index.html")
 
 
+@app.route("/panel")
+@login_required
+def dashboard():
+    datasets = Dataset.query.filter_by(user_id=current_user.id).order_by(Dataset.created_at.desc()).limit(20).all()
+    return render_template("dashboard.html", datasets=datasets)
+
+
 @app.route("/subir", methods=["POST"])
+@login_required
 def subir_archivo():
     archivo = request.files.get("archivo")
 
@@ -352,10 +408,16 @@ def subir_archivo():
         session["data_name"] = filename
     session["data_source"] = "archivo"
 
+    dataset = Dataset(user_id=current_user.id, name=session["data_name"], source_type="archivo", storage_path=ruta, row_count=df_validacion.shape[0], column_count=df_validacion.shape[1])
+    db.session.add(dataset)
+    db.session.commit()
+    session["dataset_id"] = dataset.id
+
     return redirect(url_for("analisis"))
 
 
 @app.route("/mysql", methods=["POST"])
+@login_required
 def mysql_datos():
     host = request.form.get("host", "").strip()
     puerto = request.form.get("puerto", "3306").strip()
@@ -398,6 +460,11 @@ def mysql_datos():
         session["data_name"] = f"MySQL: {base_datos}.{tabla}"
         session["data_source"] = "mysql"
 
+        dataset = Dataset(user_id=current_user.id, name=session["data_name"], source_type="mysql", storage_path=ruta, row_count=df.shape[0], column_count=df.shape[1])
+        db.session.add(dataset)
+        db.session.commit()
+        session["dataset_id"] = dataset.id
+
         return redirect(url_for("analisis"))
 
     except mysql.connector.Error as error:
@@ -410,6 +477,7 @@ def mysql_datos():
 
 
 @app.route("/analisis")
+@login_required
 def analisis():
     df = obtener_dataframe_actual()
 
@@ -442,6 +510,7 @@ def analisis():
 
 
 @app.route("/constructor")
+@login_required
 def constructor():
     df = obtener_dataframe_actual()
     if df is None:
@@ -464,6 +533,7 @@ def constructor():
 
 
 @app.route("/api/datos")
+@login_required
 def api_datos():
     df = obtener_dataframe_actual()
     if df is None:
@@ -484,6 +554,8 @@ def api_datos():
 
 
 @app.route("/api/visualizacion", methods=["POST"])
+@csrf.exempt
+@login_required
 def api_visualizacion():
     df = obtener_dataframe_actual()
     if df is None:
@@ -529,6 +601,7 @@ def api_visualizacion():
 
 
 @app.route("/reporte", methods=["POST"])
+@login_required
 def reporte():
     df = obtener_dataframe_actual()
 
@@ -654,6 +727,25 @@ def reporte():
     )
 
 
+@app.route("/reporte/pdf", methods=["POST"])
+@login_required
+def exportar_reporte_pdf():
+    df = obtener_dataframe_actual()
+    if df is None:
+        return respuesta_error("No hay datos cargados", "Carga datos antes de exportar.", 404)
+    title = request.form.get("pdf_title", "Reporte DataReport").strip()[:180] or "Reporte DataReport"
+    primary = request.form.get("primary_color", "#6F2DBD")
+    secondary = request.form.get("secondary_color", "#B58CFF")
+    orientation = request.form.get("orientation", "portrait")
+    if orientation not in {"portrait", "landscape"}:
+        orientation = "portrait"
+    report = SavedReport(user_id=current_user.id, dataset_id=session.get("dataset_id"), title=title, configuration={"primary": primary, "secondary": secondary, "orientation": orientation})
+    db.session.add(report)
+    db.session.commit()
+    pdf = build_dataset_pdf(df, title, current_user.display_name, primary, secondary, orientation)
+    return send_file(pdf, mimetype="application/pdf", as_attachment=True, download_name=f"datareport-{report.id}.pdf")
+
+
 @app.errorhandler(404)
 def pagina_no_encontrada(error):
     return respuesta_error(
@@ -696,4 +788,4 @@ def error_interno(error):
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=os.environ.get("FLASK_DEBUG") == "1")

@@ -70,7 +70,8 @@
                 <p>Estos controles permiten generar reportes personalizados.</p>
             </div>
 
-            <form action="/reporte" method="POST">
+<form action="/reporte" method="POST">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
                 <div class="form-grid">
                     <div>

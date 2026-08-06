@@ -52,3 +52,17 @@ El importador busca instrucciones `CREATE TABLE` e `INSERT INTO ... VALUES`. No 
 - No publiques credenciales ni archivos `.env`.
 - Los archivos cargados, gráficos generados y entornos virtuales están excluidos de Git.
 - Para producción, configura una clave secreta mediante variables de entorno y utiliza un servidor WSGI.
+
+## Cuentas, SQL Server y correo
+
+La aplicación usa SQLite durante el desarrollo y acepta SQL Server en producción mediante SQLAlchemy y `pyodbc`. Copia `.env.example`, genera secretos nuevos y configura `DATABASE_URL` con el controlador ODBC 18.
+
+- Registro con contraseña robusta y verificación de correo.
+- Recuperación de contraseña mediante enlaces firmados con vencimiento.
+- Segundo factor TOTP compatible con aplicaciones autenticadoras.
+- Cloudflare Turnstile configurable para proteger el registro.
+- Bloqueo temporal y límites de solicitudes ante intentos repetidos.
+- Fuentes y configuraciones de reporte asociadas a cada usuario.
+- Exportación PDF con título, colores y orientación personalizados.
+
+Nunca uses los valores de desarrollo en producción. Configura un servicio SMTP, Turnstile, HTTPS, Redis para los límites distribuidos y una clave Fernet independiente.

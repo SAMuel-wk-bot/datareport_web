@@ -45,7 +45,8 @@
                     </div>
                 </div>
 
-                <form action="/subir" method="POST" enctype="multipart/form-data">
+<form action="/subir" method="POST" enctype="multipart/form-data">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <label>Selecciona un archivo</label>
                     <input type="file" name="archivo" accept=".xlsx,.xls,.csv,.sql" required>
                     <p class="field-help">Los archivos SQL se leen de forma segura, sin conectarse ni ejecutar instrucciones en una base de datos.</p>
@@ -62,7 +63,8 @@
                     </div>
                 </div>
 
-                <form action="/mysql" method="POST">
+<form action="/mysql" method="POST">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="form-grid">
                         <div>
                             <label>Host</label>
