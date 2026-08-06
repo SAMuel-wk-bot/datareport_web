@@ -4,11 +4,11 @@ import numpy as np
 import pandas as pd
 
 
-def analyze_wait_times(series, service_target=None):
+def analyze_distribution(series, target=None, target_direction="maximum", variable_name="Variable"):
     values = pd.to_numeric(series, errors="coerce").dropna().astype(float)
     values = values[values >= 0]
     if len(values) < 3:
-        raise ValueError("Se necesitan al menos tres tiempos de espera numéricos y no negativos.")
+        raise ValueError("Se necesitan al menos tres valores numéricos y no negativos.")
 
     percentiles = values.quantile([0.5, 0.75, 0.9, 0.95, 0.99])
     mean = float(values.mean())
@@ -30,32 +30,34 @@ def analyze_wait_times(series, service_target=None):
     counts, edges = np.histogram(values, bins=edges)
     labels = [f"{edges[index]:.1f}–{edges[index + 1]:.1f}" for index in range(len(counts))]
 
-    target = float(service_target) if service_target not in {None, ""} else float(percentiles.loc[0.75])
+    target = float(target) if target not in {None, ""} else float(percentiles.loc[0.75])
     if target < 0 or not math.isfinite(target):
-        raise ValueError("La meta de servicio debe ser un número no negativo.")
-    within_target = float((values <= target).mean() * 100)
+        raise ValueError("La meta debe ser un número no negativo.")
+    if target_direction not in {"maximum", "minimum"}:
+        raise ValueError("El criterio de cumplimiento no es válido.")
+    within_target = float(((values <= target) if target_direction == "maximum" else (values >= target)).mean() * 100)
 
     if skewness > 1:
         shape = "Asimetría positiva fuerte"
-        explanation = "La mayoría de las llamadas se atiende rápido, pero una cola de esperas largas eleva el promedio."
+        explanation = f"La mayoría de los valores de {variable_name} se concentra en niveles bajos, pero una cola de casos altos eleva el promedio."
     elif skewness > 0.5:
         shape = "Asimetría positiva moderada"
-        explanation = "Existen esperas largas suficientes para separar el promedio de la experiencia típica."
+        explanation = f"Existen valores altos de {variable_name} suficientes para separar el promedio del comportamiento típico."
     elif skewness < -0.5:
         shape = "Asimetría negativa"
-        explanation = "La distribución concentra casos altos y presenta una cola hacia esperas menores."
+        explanation = f"La distribución de {variable_name} concentra casos altos y presenta una cola hacia valores menores."
     else:
         shape = "Distribución aproximadamente simétrica"
-        explanation = "Media y mediana son similares; aun así, los percentiles muestran el nivel de servicio de la cola."
+        explanation = "Media y mediana son similares; aun así, los percentiles permiten observar los extremos de la distribución."
 
     recommendations = []
     if skewness > 0.5:
-        recommendations.append("Usa la mediana como indicador de experiencia típica y P90/P95 para controlar la cola.")
+        recommendations.append("Usa la mediana como indicador del valor típico y P90/P95 para controlar la cola superior.")
     if within_target < 80:
-        recommendations.append("Menos del 80% cumple la meta: ajusta dotación en horas pico y revisa el enrutamiento de llamadas.")
+        recommendations.append("Menos del 80% cumple la meta: segmenta la variable para identificar grupos, periodos o categorías responsables.")
     if extreme_count:
         recommendations.append(f"Investiga los {extreme_count} casos sobre el límite de valores extremos ({extreme_limit:.2f}).")
-    recommendations.append("Segmenta los tiempos por hora, agente, categoría y canal para localizar el origen de las esperas largas.")
+    recommendations.append("Compara la distribución por fecha y categorías disponibles para localizar el origen de los valores extremos.")
 
     return {
         "count": len(values),
@@ -75,8 +77,14 @@ def analyze_wait_times(series, service_target=None):
         "extreme_count": extreme_count,
         "tail_count": tail_count,
         "service_target": target,
+        "target_direction": target_direction,
         "within_target": within_target,
         "histogram_labels": labels,
         "histogram_counts": counts.astype(int).tolist(),
         "recommendations": recommendations,
     }
+
+
+def analyze_wait_times(series, service_target=None):
+    """Compatibilidad con el análisis original de tiempos de espera."""
+    return analyze_distribution(series, service_target, "maximum", "tiempo de espera")

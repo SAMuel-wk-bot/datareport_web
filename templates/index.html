@@ -21,7 +21,7 @@
             <a href="#funciones">Reportes</a>
             <a href="#funciones">Métricas</a>
             <a href="{{ url_for('laboratorio_estadistico') }}">Cálculos matemáticos</a>
-            <a href="{{ url_for('call_center') }}">Call Center Analytics</a>
+            <a href="{{ url_for('distribution_analysis') }}">Analizar distribuciones</a>
             {% if current_user.is_authenticated %}
             <a href="{{ url_for('dashboard') }}" class="profile-button">Mi perfil</a>
             {% else %}

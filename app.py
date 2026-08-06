@@ -28,7 +28,7 @@ import matplotlib.pyplot as plt
 from werkzeug.utils import secure_filename
 
 from auth import auth_bp
-from call_center_analysis import analyze_wait_times
+from call_center_analysis import analyze_distribution
 from encrypted_storage import decrypted_file, encrypt_file
 from extensions import csrf, db, limiter, login_manager, mail
 from models import Dataset, SavedReport, User
@@ -838,12 +838,13 @@ def pagina_no_encontrada(error):
 
 
 @app.route("/analisis/call-center", methods=["GET", "POST"])
-def call_center():
+@app.route("/analisis/distribucion", methods=["GET", "POST"])
+def distribution_analysis():
     df = obtener_dataframe_actual()
     if df is None:
         return respuesta_error(
-            "No hay un Excel cargado",
-            "Carga un archivo Excel o CSV con los tiempos de espera antes de abrir Call Center Analytics.",
+            "No hay datos cargados",
+            "Carga Excel, CSV, SQL o una fuente de base de datos antes de analizar su distribución.",
             404,
             ["Regresa a Inicio y selecciona el archivo de llamadas."],
         )
@@ -851,18 +852,18 @@ def call_center():
     analysis = None
     error = None
     selected_column = request.form.get("wait_column", numerics[0] if numerics else None)
-    service_target = request.form.get("service_target", "")
-    unit = request.form.get("unit", "segundos")
-    if unit not in {"segundos", "minutos"}:
-        unit = "segundos"
+    target = request.form.get("target", "")
+    target_direction = request.form.get("target_direction", "maximum")
+    variable_label = request.form.get("variable_label", selected_column or "Variable").strip()[:80]
+    unit = request.form.get("unit", "unidades").strip()[:30] or "unidades"
     if request.method == "POST":
         try:
             if selected_column not in df.columns:
                 raise ValueError("Selecciona una columna válida con tiempos de espera.")
-            analysis = analyze_wait_times(convertir_numero(df[selected_column]), service_target)
+            analysis = analyze_distribution(convertir_numero(df[selected_column]), target, target_direction, variable_label)
         except (ValueError, TypeError) as exc:
             error = str(exc)
-    return render_template("call_center.html", numerics=numerics, analysis=analysis, error=error, selected_column=selected_column, service_target=service_target, unit=unit)
+    return render_template("distribution.html", numerics=numerics, analysis=analysis, error=error, selected_column=selected_column, target=target, target_direction=target_direction, variable_label=variable_label, unit=unit)
 
 
 @app.errorhandler(CSRFError)
