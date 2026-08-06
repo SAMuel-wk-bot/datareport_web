@@ -92,3 +92,7 @@ pip install -r requirements-dev.txt
 ```
 
 Consulta [SECURITY.md](SECURITY.md) para conocer controles, requisitos de producción, rotación de secretos y límites de las pruebas automatizadas.
+
+## Análisis de call center desde Excel
+
+Carga un `.xlsx`, selecciona la columna de tiempo de espera y abre **Call Center Analytics**. El reporte genera un histograma, media, mediana, P75, P90, P95, P99, asimetría, casos extremos y porcentaje atendido dentro de una meta configurable. Cuando existe una cola positiva, prioriza la mediana y los percentiles y propone acciones para investigar los casos de mayor espera.

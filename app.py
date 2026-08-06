@@ -28,6 +28,7 @@ import matplotlib.pyplot as plt
 from werkzeug.utils import secure_filename
 
 from auth import auth_bp
+from call_center_analysis import analyze_wait_times
 from encrypted_storage import decrypted_file, encrypt_file
 from extensions import csrf, db, limiter, login_manager, mail
 from models import Dataset, SavedReport, User
@@ -834,6 +835,34 @@ def pagina_no_encontrada(error):
         404,
         ["Revisa la dirección o regresa al inicio."],
     )
+
+
+@app.route("/analisis/call-center", methods=["GET", "POST"])
+def call_center():
+    df = obtener_dataframe_actual()
+    if df is None:
+        return respuesta_error(
+            "No hay un Excel cargado",
+            "Carga un archivo Excel o CSV con los tiempos de espera antes de abrir Call Center Analytics.",
+            404,
+            ["Regresa a Inicio y selecciona el archivo de llamadas."],
+        )
+    _, numerics, _, _ = detectar_columnas(df)
+    analysis = None
+    error = None
+    selected_column = request.form.get("wait_column", numerics[0] if numerics else None)
+    service_target = request.form.get("service_target", "")
+    unit = request.form.get("unit", "segundos")
+    if unit not in {"segundos", "minutos"}:
+        unit = "segundos"
+    if request.method == "POST":
+        try:
+            if selected_column not in df.columns:
+                raise ValueError("Selecciona una columna válida con tiempos de espera.")
+            analysis = analyze_wait_times(convertir_numero(df[selected_column]), service_target)
+        except (ValueError, TypeError) as exc:
+            error = str(exc)
+    return render_template("call_center.html", numerics=numerics, analysis=analysis, error=error, selected_column=selected_column, service_target=service_target, unit=unit)
 
 
 @app.errorhandler(CSRFError)
